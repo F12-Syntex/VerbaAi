@@ -1,0 +1,15 @@
+{
+  "name": "verbaai",
+  "version": "1.0.0",
+  "description": "AI text enhancer using OpenAI for BetterDiscord",
+  "main": "dist/VerbaAi.plugin.js",
+"scripts": {
+  "build": "webpack --config webpack.config.js --output-filename=../../VerbaAi.plugin.js"
+},
+  "author": "syntex",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  }
+}

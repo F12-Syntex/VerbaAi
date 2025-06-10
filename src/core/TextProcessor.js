@@ -3,13 +3,98 @@ const { TIMINGS } = require('../utils/constants');
 
 class TextProcessor {
     async simulateUserTyping(textArea, newText) {
+        // Ensure proper focus
         textArea.focus();
+        textArea.click(); // Sometimes needed for Discord's editor
         await KeyboardUtils.sleep(TIMINGS.FOCUS_DELAY);
         
         await this.clearExistingText(textArea);
         await KeyboardUtils.sleep(TIMINGS.CLEAR_DELAY);
         
         await this.typeTextCharByChar(textArea, newText);
+        
+        // Ensure proper cursor position at the end
+        await this.setCursorToEnd(textArea);
+        
+        // Trigger a final input event to ensure Discord knows the content changed
+        textArea.dispatchEvent(new Event('input', { bubbles: true }));
+        textArea.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    async setCursorToEnd(textArea) {
+        try {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            
+            // Move cursor to the very end
+            if (textArea.childNodes.length > 0) {
+                const lastNode = textArea.childNodes[textArea.childNodes.length - 1];
+                if (lastNode.nodeType === Node.TEXT_NODE) {
+                    range.setStart(lastNode, lastNode.textContent.length);
+                } else {
+                    range.setStartAfter(lastNode);
+                }
+            } else {
+                range.setStart(textArea, 0);
+            }
+            
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Ensure focus
+            textArea.focus();
+            
+        } catch (error) {
+            console.log('Could not set cursor position:', error);
+            // Fallback: just focus
+            textArea.focus();
+        }
+    }
+
+    async simpleBulkReplace(textArea, newText) {
+        textArea.focus();
+        textArea.click();
+        await KeyboardUtils.sleep(TIMINGS.FOCUS_DELAY);
+        
+        // Select all content
+        await this.selectAllAndDelete(textArea);
+        await KeyboardUtils.sleep(100);
+        
+        // Insert all text at once
+        const inputEvent = new InputEvent('beforeinput', {
+            inputType: 'insertText',
+            data: newText,
+            bubbles: true,
+            cancelable: true
+        });
+        textArea.dispatchEvent(inputEvent);
+        
+        // Try execCommand first
+        const inserted = document.execCommand('insertText', false, newText);
+        
+        if (!inserted) {
+            // Manual insertion
+            try {
+                const selection = window.getSelection();
+                const range = selection.getRangeAt(0) || document.createRange();
+                range.deleteContents();
+                range.insertNode(document.createTextNode(newText));
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (error) {
+                // Last resort: direct content manipulation
+                textArea.textContent = newText;
+            }
+        }
+        
+        // Dispatch events
+        textArea.dispatchEvent(new Event('input', { bubbles: true }));
+        textArea.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // Ensure cursor is at the end
+        await this.setCursorToEnd(textArea);
     }
 
     async clearExistingText(textArea) {
@@ -110,7 +195,7 @@ class TextProcessor {
                     code: 'Backspace',
                     keyCode: 8 
                 });
-                await KeyboardUtils.sleep(5);
+                await KeyboardUtils.sleep(20);
             }
             
         } catch (error) {

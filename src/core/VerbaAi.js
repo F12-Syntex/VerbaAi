@@ -110,9 +110,9 @@ class VerbaAi {
             [ACTIONS.SPELL_FIX]: "Fixing spelling... ✨",
             [ACTIONS.REWORD]: "Rewording text... 🔄",
             [ACTIONS.FORMAL]: "Making text formal... 👔",
-            [ACTIONS.CASUAL]: "Making text casual... 😎",
+            [ACTIONS.CASUAL]: "Making text casual... 😊",
             [ACTIONS.SUMMARIZE]: "Summarizing text... 📝",
-            [ACTIONS.EXPAND]: "Expanding text... 📈",
+            [ACTIONS.EXPAND]: "Expanding text... 📖",
             [ACTIONS.CUSTOM]: "Processing custom prompt... 🎯"
         };
 
@@ -123,7 +123,14 @@ class VerbaAi {
             
             const textArea = document.querySelector('[data-slate-editor="true"]');
             if (textArea) {
-                await this.textProcessor.simulateUserTyping(textArea, enhancedText);
+                // Try the normal typing simulation first
+                try {
+                    await this.textProcessor.simulateUserTyping(textArea, enhancedText);
+                } catch (error) {
+                    console.log('Typing simulation failed, trying bulk replace:', error);
+                    // Fallback to bulk replace if typing fails
+                    await this.textProcessor.simpleBulkReplace(textArea, enhancedText);
+                }
                 BdApi.showToast(MESSAGES.SUCCESS, { type: "success" });
             }
         } catch (error) {

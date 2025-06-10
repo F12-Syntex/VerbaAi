@@ -101,26 +101,36 @@ class KeyboardUtils {
     }
 
     static async _handleCharacterKey(element, key) {
+        // Simpler approach that's less likely to break Discord's editor
         const inputEvent = new InputEvent('beforeinput', {
             inputType: 'insertText',
             data: key,
             bubbles: true,
             cancelable: true
         });
-        element.dispatchEvent(inputEvent);
+        
+        if (!element.dispatchEvent(inputEvent)) {
+            return; // Event was cancelled
+        }
 
+        // Try execCommand first (more compatible)
         const inserted = document.execCommand('insertText', false, key);
         
         if (!inserted) {
+            // Fallback to manual insertion
             KeyboardUtils._manualInsertText(element, key);
         }
 
+        // Always dispatch the input event
         const inputEventAfter = new InputEvent('input', {
             inputType: 'insertText',
             data: key,
             bubbles: true
         });
         element.dispatchEvent(inputEventAfter);
+        
+        // Give Discord time to process
+        await KeyboardUtils.sleep(2);
     }
 
     static _manualDeleteContent(element, isBackspace) {

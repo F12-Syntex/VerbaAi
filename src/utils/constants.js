@@ -14,6 +14,7 @@ module.exports = {
     MENU_ID: 'verba-ai-menu',
     STYLES_ID: 'verba-ai-styles',
     CONFIG_MODAL_ID: 'verba-ai-config-modal',
+    SUGGESTION_BOX_ID: 'verba-ai-suggestion-box',
     CONFIG_STORAGE_KEY: 'verba-ai-config',
     
     TIMINGS: {
@@ -38,7 +39,7 @@ module.exports = {
     
     CONFIG_DEFAULTS: {
         aiOptions: {
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-4.1-mini',
             maxTokens: 500,
             temperature: 0.7
         },

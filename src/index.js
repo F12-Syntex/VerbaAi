@@ -13,6 +13,7 @@ const ButtonManager = require('./ui/ButtonManager');
 const MenuManager = require('./ui/MenuManager');
 const ConfigModal = require('./ui/ConfigModal');
 const StyleManager = require('./ui/styles');
+const SuggestionBox = require('./ui/SuggestionBox'); 
 const { MESSAGES, ACTIONS, ENV_VARS } = require('./utils/constants');
 
 module.exports = class VerbaAi {
@@ -29,6 +30,7 @@ module.exports = class VerbaAi {
         );
         this.domManager = new DOMManager(this.insertButton.bind(this));
         this.configModal = new ConfigModal(this.configManager, this.onConfigSave.bind(this));
+        this.suggestionBox = new SuggestionBox(this.apiManager, this.configManager); 
         
         this.isMenuOpen = false;
     }
@@ -50,6 +52,7 @@ module.exports = class VerbaAi {
         this.removeButton();
         this.removeMenu();
         this.configModal.close();
+        this.suggestionBox.hide();
         BdApi.showToast(MESSAGES.STOP, { type: "error" });
     }
 
@@ -110,7 +113,7 @@ module.exports = class VerbaAi {
         this.apiManager.loadConfiguration();
     }
 
-    async handleAction(action) {
+     async handleAction(action) {
         if (action === 'api-info') {
             this.showApiKeyInfo();
             return;
@@ -132,47 +135,22 @@ module.exports = class VerbaAi {
             return;
         }
 
-        // Handle custom prompts
-        const customPrompts = this.configManager.getCustomPrompts();
-        let actionName = action;
-        
-        if (customPrompts[action]) {
-            actionName = customPrompts[action].name;
-        } else {
-            const messages = {
-                [ACTIONS.SPELL_FIX]: "Fixing spelling... 🔍",
-                [ACTIONS.REWORD]: "Rewording text... 📝",
-                [ACTIONS.FORMAL]: "Making text formal... 🎩",
-                [ACTIONS.CASUAL]: "Making text casual... 😊",
-                [ACTIONS.SUMMARIZE]: "Summarizing text... 📄",
-                [ACTIONS.EXPAND]: "Expanding text... 📋",
-                [ACTIONS.CUSTOM]: "Processing custom prompt... ⚡"
-            };
-            actionName = messages[action] || "Processing...";
-        }
+        // Close the menu when action is triggered
+        this.closeMenu();
 
-        BdApi.showToast(actionName, { type: "info" });
-
-        try {
-            const enhancedText = await this.apiManager.callOpenAI(action, currentText);
-            
-            const textArea = document.querySelector('[data-slate-editor="true"]');
-            if (textArea) {
-                // Try the normal typing simulation first
-                try {
-                    await this.textProcessor.simulateUserTyping(textArea, enhancedText);
-                } catch (error) {
-                    console.log('Typing simulation failed, trying bulk replace:', error);
-                    // Fallback to bulk replace if typing fails
-                    await this.textProcessor.simpleBulkReplace(textArea, enhancedText);
-                }
-                BdApi.showToast(MESSAGES.SUCCESS, { type: "success" });
+        // Show the suggestion box instead of directly processing
+        const textArea = document.querySelector('[data-slate-editor="true"]');
+        if (textArea) {
+            try {
+                await this.suggestionBox.show(textArea, action, currentText);
+                BdApi.showToast("Generating suggestions... ✨", { type: "info" });
+            } catch (error) {
+                console.error('VerbaAi Suggestion Error:', error);
+                BdApi.showToast(MESSAGES.ERROR, { type: "error" });
             }
-        } catch (error) {
-            console.error('VerbaAi OpenAI Error:', error);
-            BdApi.showToast(MESSAGES.ERROR, { type: "error" });
         }
     }
+
 
     showApiKeyInfo() {
         const apiInfo = this.apiManager.getApiInfo();

@@ -159,17 +159,17 @@ class ConfigModal {
                             <span class="label-description">Different models have varying capabilities and costs</span>
                         </label>
                         <div class="select-wrapper">
-                            <select id="config-model" class="form-select">
-                                <option value="gpt-3.5-turbo" ${config.aiOptions.model === 'gpt-3.5-turbo' ? 'selected' : ''}>
-                                    GPT-3.5 Turbo (Fast & Efficient)
-                                </option>
-                                <option value="gpt-4" ${config.aiOptions.model === 'gpt-4' ? 'selected' : ''}>
-                                    GPT-4 (Most Capable)
-                                </option>
-                                <option value="gpt-4-turbo" ${config.aiOptions.model === 'gpt-4-turbo' ? 'selected' : ''}>
-                                    GPT-4 Turbo (Balanced)
-                                </option>
-                            </select>
+                        <select id="config-model" class="form-select">
+                            <option value="gpt-4.1" ${config.aiOptions.model === 'gpt-4.1' ? 'selected' : ''}>
+                                GPT-4.1 (Most Capable)
+                            </option>
+                            <option value="gpt-4.1-mini" ${config.aiOptions.model === 'gpt-4.1-mini' ? 'selected' : ''}>
+                                GPT-4.1-mini (Balanced)
+                            </option>
+                            <option value="gpt-4o-mini" ${config.aiOptions.model === 'gpt-4o-mini' ? 'selected' : ''}>
+                                GPT-4o-mini (Cost Effective Multimodal)
+                            </option>
+                        </select>
                         </div>
                     </div>
 

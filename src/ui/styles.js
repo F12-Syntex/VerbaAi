@@ -31,6 +31,26 @@ class StyleManager {
                     transform: translateY(0) scale(1);
                 }
             }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
             
             .verba-ai-menu-item {
                 display: flex;
@@ -90,6 +110,24 @@ class StyleManager {
             }
             
             #verba-ai-menu::-webkit-scrollbar-thumb:hover {
+                background: var(--scrollbar-auto-thumb-hover);
+            }
+
+            #verba-ai-config-modal *::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            #verba-ai-config-modal *::-webkit-scrollbar-track {
+                background: var(--background-secondary);
+                border-radius: 4px;
+            }
+            
+            #verba-ai-config-modal *::-webkit-scrollbar-thumb {
+                background: var(--scrollbar-auto-thumb);
+                border-radius: 4px;
+            }
+            
+            #verba-ai-config-modal *::-webkit-scrollbar-thumb:hover {
                 background: var(--scrollbar-auto-thumb-hover);
             }
         `;

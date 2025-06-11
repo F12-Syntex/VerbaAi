@@ -1,7 +1,8 @@
 const { API_ENDPOINTS, ENV_VARS } = require('../utils/constants');
 
 class ApiManager {
-    constructor() {
+    constructor(configManager) {
+        this.configManager = configManager;
         this.apiKey = null;
         this.apiEndpoint = API_ENDPOINTS.OPENAI;
         this.loadConfiguration();
@@ -17,7 +18,7 @@ class ApiManager {
             this.apiEndpoint = process.env.VERBA_AI_ENDPOINT;
         }
 
-        console.log('VerbaAi: Using OpenAI provider', this.apiKey ? '✓ API Key found' : '✗ No API Key');
+        console.log('VerbaAi: Using OpenAI provider', this.apiKey ? '✅ API Key found' : '❌ No API Key');
     }
 
     hasApiKey() {
@@ -38,17 +39,9 @@ class ApiManager {
             throw new Error('No API key available');
         }
 
-        const prompts = {
-            "spell-fix": "Fix any spelling and grammar errors in the following text. Return only the corrected text:",
-            "reword": "Rewrite the following text to improve clarity and flow while maintaining the same meaning:",
-            "formal": "Rewrite the following text in a formal, professional tone:",
-            "casual": "Rewrite the following text in a casual, friendly tone:",
-            "summarize": "Summarize the following text concisely:",
-            "expand": "Expand on the following text with more detail and explanation:",
-            "custom": "Improve the following text:"
-        };
-
-        const fullPrompt = `${prompts[action]}\n\n"${text}"`;
+        const config = this.configManager.getConfig();
+        const prompt = this.configManager.getPrompt(action);
+        const fullPrompt = `${prompt}\n\n"${text}"`;
         
         const requestOptions = {
             method: 'POST',
@@ -57,9 +50,10 @@ class ApiManager {
                 'Authorization': `Bearer ${this.apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-4.1-nano',
+                model: config.aiOptions.model,
                 messages: [{ role: 'user', content: fullPrompt }],
-                max_tokens: 500
+                max_tokens: config.aiOptions.maxTokens,
+                temperature: config.aiOptions.temperature
             })
         };
         

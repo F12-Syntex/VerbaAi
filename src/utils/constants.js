@@ -13,6 +13,8 @@ module.exports = {
     CONTAINER_ID: 'verba-ai-container',
     MENU_ID: 'verba-ai-menu',
     STYLES_ID: 'verba-ai-styles',
+    CONFIG_MODAL_ID: 'verba-ai-config-modal',
+    CONFIG_STORAGE_KEY: 'verba-ai-config',
     
     TIMINGS: {
         INSERTION_DEBOUNCE: 500,
@@ -32,6 +34,24 @@ module.exports = {
         SUMMARIZE: 'summarize',
         EXPAND: 'expand',
         CUSTOM: 'custom'
+    },
+    
+    CONFIG_DEFAULTS: {
+        aiOptions: {
+            model: 'gpt-3.5-turbo',
+            maxTokens: 500,
+            temperature: 0.7
+        },
+        prompts: {
+            'spell-fix': "Fix any spelling and grammar errors in the following text. Return only the corrected text:",
+            'reword': "Rewrite the following text to improve clarity and flow while maintaining the same meaning:",
+            'formal': "Rewrite the following text in a formal, professional tone:",
+            'casual': "Rewrite the following text in a casual, friendly tone:",
+            'summarize': "Summarize the following text concisely:",
+            'expand': "Expand on the following text with more detail and explanation:",
+            'custom': "Improve the following text:"
+        },
+        customPrompts: {}
     },
     
     MESSAGES: {

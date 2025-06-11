@@ -5,21 +5,30 @@
  * @description  AI text enhancer using OpenAI.
  */
 
+const ConfigManager = require('./core/ConfigManager');
 const ApiManager = require('./core/ApiManager');
 const DOMManager = require('./core/DOMManager');
 const TextProcessor = require('./core/TextProcessor');
 const ButtonManager = require('./ui/ButtonManager');
 const MenuManager = require('./ui/MenuManager');
+const ConfigModal = require('./ui/ConfigModal');
 const StyleManager = require('./ui/styles');
 const { MESSAGES, ACTIONS, ENV_VARS } = require('./utils/constants');
 
 module.exports = class VerbaAi {
     constructor() {
-        this.apiManager = new ApiManager();
+        this.configManager = new ConfigManager();
+        this.apiManager = new ApiManager(this.configManager);
         this.textProcessor = new TextProcessor();
         this.buttonManager = new ButtonManager(this.apiManager.hasApiKey());
-        this.menuManager = new MenuManager(this.apiManager.hasApiKey(), this.handleAction.bind(this));
+        this.menuManager = new MenuManager(
+            this.apiManager.hasApiKey(), 
+            this.configManager,
+            this.handleAction.bind(this), 
+            this.openConfiguration.bind(this)
+        );
         this.domManager = new DOMManager(this.insertButton.bind(this));
+        this.configModal = new ConfigModal(this.configManager, this.onConfigSave.bind(this));
         
         this.isMenuOpen = false;
     }
@@ -40,6 +49,7 @@ module.exports = class VerbaAi {
         this.domManager.cleanup();
         this.removeButton();
         this.removeMenu();
+        this.configModal.close();
         BdApi.showToast(MESSAGES.STOP, { type: "error" });
     }
 
@@ -91,6 +101,15 @@ module.exports = class VerbaAi {
         this.buttonManager.setActiveState(false);
     }
 
+    openConfiguration() {
+        this.configModal.open();
+    }
+
+    onConfigSave() {
+        // Configuration was saved, we might want to refresh API manager
+        this.apiManager.loadConfiguration();
+    }
+
     async handleAction(action) {
         if (action === 'api-info') {
             this.showApiKeyInfo();
@@ -113,17 +132,26 @@ module.exports = class VerbaAi {
             return;
         }
 
-        const messages = {
-            [ACTIONS.SPELL_FIX]: "Fixing spelling... ✨",
-            [ACTIONS.REWORD]: "Rewording text... 🔄",
-            [ACTIONS.FORMAL]: "Making text formal... 👔",
-            [ACTIONS.CASUAL]: "Making text casual... 😊",
-            [ACTIONS.SUMMARIZE]: "Summarizing text... 📝",
-            [ACTIONS.EXPAND]: "Expanding text... 📖",
-            [ACTIONS.CUSTOM]: "Processing custom prompt... 🎯"
-        };
+        // Handle custom prompts
+        const customPrompts = this.configManager.getCustomPrompts();
+        let actionName = action;
+        
+        if (customPrompts[action]) {
+            actionName = customPrompts[action].name;
+        } else {
+            const messages = {
+                [ACTIONS.SPELL_FIX]: "Fixing spelling... 🔍",
+                [ACTIONS.REWORD]: "Rewording text... 📝",
+                [ACTIONS.FORMAL]: "Making text formal... 🎩",
+                [ACTIONS.CASUAL]: "Making text casual... 😊",
+                [ACTIONS.SUMMARIZE]: "Summarizing text... 📄",
+                [ACTIONS.EXPAND]: "Expanding text... 📋",
+                [ACTIONS.CUSTOM]: "Processing custom prompt... ⚡"
+            };
+            actionName = messages[action] || "Processing...";
+        }
 
-        BdApi.showToast(messages[action] || "Processing...", { type: "info" });
+        BdApi.showToast(actionName, { type: "info" });
 
         try {
             const enhancedText = await this.apiManager.callOpenAI(action, currentText);

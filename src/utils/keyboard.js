@@ -47,136 +47,17 @@ class KeyboardUtils {
             cancelable: true
         };
 
-        // Dispatch keydown
+        // Dispatch keyboard events in proper sequence
         const keydownEvent = new KeyboardEvent('keydown', eventOptions);
         element.dispatchEvent(keydownEvent);
-
-        // Handle different types of keys
-        if (key === 'Delete' || key === 'Backspace') {
-            await KeyboardUtils._handleDeleteKey(element, key);
-        } else if (ctrlKey && key.toLowerCase() === 'a') {
-            await KeyboardUtils._handleSelectAll(element);
-        } else if (key.length === 1 && !ctrlKey && !altKey && !metaKey) {
-            await KeyboardUtils._handleCharacterKey(element, key);
-        }
-
-        // Dispatch keyup
-        const keyupEvent = new KeyboardEvent('keyup', eventOptions);
-        element.dispatchEvent(keyupEvent);
-    }
-
-    static async _handleDeleteKey(element, key) {
-        const beforeInputEvent = new InputEvent('beforeinput', {
-            inputType: key === 'Delete' ? 'deleteContentForward' : 'deleteContentBackward',
-            bubbles: true,
-            cancelable: true
-        });
-        element.dispatchEvent(beforeInputEvent);
-
-        const deleted = document.execCommand('delete') || 
-                       document.execCommand('forwardDelete') ||
-                       KeyboardUtils._manualDeleteContent(element, key === 'Backspace');
-
-        const inputEvent = new InputEvent('input', {
-            inputType: key === 'Delete' ? 'deleteContentForward' : 'deleteContentBackward',
-            bubbles: true
-        });
-        element.dispatchEvent(inputEvent);
-    }
-
-    static async _handleSelectAll(element) {
-        const selection = window.getSelection();
-        const range = document.createRange();
         
-        try {
-            range.selectNodeContents(element);
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            element.dispatchEvent(new Event('selectstart', { bubbles: true }));
-            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-        } catch (error) {
-            console.log('Select all failed:', error);
-        }
-    }
-
-    static async _handleCharacterKey(element, key) {
-        // Simpler approach that's less likely to break Discord's editor
-        const inputEvent = new InputEvent('beforeinput', {
-            inputType: 'insertText',
-            data: key,
-            bubbles: true,
-            cancelable: true
-        });
+        // Small delay between keydown and keyup
+        await KeyboardUtils.sleep(5);
         
-        if (!element.dispatchEvent(inputEvent)) {
-            return; // Event was cancelled
-        }
-
-        // Try execCommand first (more compatible)
-        const inserted = document.execCommand('insertText', false, key);
-        
-        if (!inserted) {
-            // Fallback to manual insertion
-            KeyboardUtils._manualInsertText(element, key);
-        }
-
-        // Always dispatch the input event
-        const inputEventAfter = new InputEvent('input', {
-            inputType: 'insertText',
-            data: key,
-            bubbles: true
-        });
-        element.dispatchEvent(inputEventAfter);
-        
-        // Give Discord time to process
-        await KeyboardUtils.sleep(2);
-    }
-
-    static _manualDeleteContent(element, isBackspace) {
-        try {
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
-            
-            if (range.collapsed) {
-                if (isBackspace) {
-                    range.setStart(range.startContainer, Math.max(0, range.startOffset - 1));
-                } else {
-                    range.setEnd(range.endContainer, Math.min(range.endContainer.textContent.length, range.endOffset + 1));
-                }
-            }
-            
-            range.deleteContents();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            return true;
-        } catch (error) {
-            console.log('Manual delete failed:', error);
-            return false;
-        }
-    }
-
-    static _manualInsertText(element, text) {
-        try {
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
-            
-            range.deleteContents();
-            
-            const textNode = document.createTextNode(text);
-            range.insertNode(textNode);
-            
-            range.setStartAfter(textNode);
-            range.collapse(true);
-            
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            return true;
-        } catch (error) {
-            console.log('Manual insert failed:', error);
-            return false;
+        // Only dispatch keyup if keydown wasn't prevented
+        if (!keydownEvent.defaultPrevented) {
+            const keyupEvent = new KeyboardEvent('keyup', eventOptions);
+            element.dispatchEvent(keyupEvent);
         }
     }
 }
